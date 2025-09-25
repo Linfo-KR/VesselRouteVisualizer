@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union, Any
 import logging
 from pathlib import Path
 
-from mapper import DataMapper
+from .mapper import DataMapper
 
 class RouteProcessor:
     """
@@ -34,6 +34,13 @@ class RouteProcessor:
             처리된 DataFrame
         """
         result_df = input_df.copy()
+
+        # 출력 컬럼을 object 타입으로 미리 생성하여 FutureWarning 방지
+        for field_key in field_mappings.keys():
+            for terminal_num in range(1, max_terminals + 1):
+                output_column = f"{output_prefix}{terminal_num}{field_key}"
+                if output_column not in result_df.columns:
+                    result_df[output_column] = pd.Series(dtype='object')
         
         for idx, row in result_df.iterrows():
             # 라우트 컬럼들에서 값 추출 및 결합

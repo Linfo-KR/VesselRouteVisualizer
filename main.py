@@ -2,18 +2,21 @@ import pandas as pd
 from typing import Dict, List, Optional, Union, Any
 import logging
 from pathlib import Path
+import sys
 
-from mapper import DataMapper
-from route import RouteProcessor
-from export_data import ExportData
+sys.path.append(str(Path(__file__).parent))
+
+from module.mapper import DataMapper
+from module.route import RouteProcessor
+from module.export_data import ExportData
 
 def main():
-    """메인 실행 함수"""
+    """Main"""
     
     # 설정 정의
     config = {
         'key_column': 'SVC',
-        'route_columns': ['Route1', 'Route2'],
+        'route_columns': ['SVC1', 'SVC2'],
         'field_mappings': {
             'Name': 'Name',
             'Wtp': 'Wtp',
@@ -25,10 +28,11 @@ def main():
     
     try:
         # 기존 코드와 동일한 처리
+        ROOT_DIR = Path(__file__).parent
         result_df = ExportData.process_terminal_routes(
-            reference_file="TerminalInfo.csv",
-            input_file="Test.csv", 
-            output_file="Test_Result.csv",
+            proforma=ROOT_DIR / 'data' / 'input' / 'proforma.csv',
+            svc=ROOT_DIR / 'data' / 'input' / 'bpa_service_code.csv', 
+            output=ROOT_DIR / 'data' / 'output' / 'result.csv',
             config=config
         )
         
@@ -36,7 +40,7 @@ def main():
         print(result_df.head(10))
         
         # 개별 조회 예시
-        mapper = DataMapper.from_csv("TerminalInfo.csv", "SVC")
+        mapper = DataMapper.from_csv(ROOT_DIR /'data' / 'input' / 'proforma.csv', "SVC")
         single_result = mapper.lookup_values("CKJ,CKJ1", "Name", 1)
         print(f"\n단일 조회 결과: {single_result}")
         

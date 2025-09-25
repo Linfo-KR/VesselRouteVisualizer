@@ -9,27 +9,27 @@ class DataMapper:
     기준 데이터를 바탕으로 다른 데이터의 필드를 조회하고 매핑하는 기능 제공
     """
     
-    def __init__(self, reference_df: pd.DataFrame, key_column: str):
+    def __init__(self, proforma: pd.DataFrame, key_column: str):
         """
         Args:
-            reference_df: 기준이 되는 DataFrame (조회 대상 데이터)
+            proforma: 조회 대상 데이터(Terminal Name / Sch / Wtp)
             key_column: 조회 키로 사용할 컬럼명
         """
-        self.reference_df = reference_df.copy()
+        self.proforma = proforma.copy()
         self.key_column = key_column
-        self._validate_reference_data()
+        self._validate_proforma_data()
         
         # 성능 최적화를 위한 인덱스 생성
-        if key_column in self.reference_df.columns:
-            self.reference_df.set_index(key_column, inplace=True)
+        if key_column in self.proforma.columns:
+            self.proforma.set_index(key_column, inplace=True)
     
-    def _validate_reference_data(self):
+    def _validate_proforma_data(self):
         """기준 데이터 유효성 검사"""
-        if self.reference_df.empty:
-            raise ValueError("Reference DataFrame is empty")
+        if self.proforma.empty:
+            raise ValueError("Proforma DataFrame is empty")
         
-        if self.key_column not in self.reference_df.columns:
-            raise ValueError(f"Key column '{self.key_column}' not found in reference data")
+        if self.key_column not in self.proforma.columns:
+            raise ValueError(f"Key column '{self.key_column}' not found in proforma data")
     
     @classmethod
     def from_csv(cls, file_path: Union[str, Path], key_column: str, **kwargs) -> 'DataMapper':
@@ -42,7 +42,8 @@ class DataMapper:
             **kwargs: pd.read_csv에 전달할 추가 인수
         """
         try:
-            df = pd.read_csv(file_path, **kwargs)
+            encoding = kwargs.pop('encoding', 'cp949')
+            df = pd.read_csv(file_path, encoding=encoding, **kwargs)
             return cls(df, key_column)
         except Exception as e:
             raise ValueError(f"Failed to load CSV file '{file_path}': {e}")
@@ -64,7 +65,7 @@ class DataMapper:
         Returns:
             조회된 값 (문자열)
         """
-        if not keys or target_column not in self.reference_df.columns:
+        if not keys or target_column not in self.proforma.columns:
             return ""
         
         # 키 리스트 정규화
@@ -76,24 +77,28 @@ class DataMapper:
         if not key_list:
             return ""
         
-        try:
-            # 인덱스를 사용한 빠른 조회
-            matching_values = []
-            for key in key_list:
-                if key in self.reference_df.index:
-                    value = self.reference_df.loc[key, target_column]
-                    if pd.notna(value):
-                        matching_values.append(str(value))
-            
-            # 중복 제거 및 순서 유지
-            unique_values = list(dict.fromkeys(matching_values))
-            
-            # 지정된 위치의 값 반환
-            if 1 <= position <= len(unique_values):
-                return unique_values[position - 1]
-            
-        except Exception as e:
-            logging.warning(f"Error during lookup: {e}")
+        matching_values = []
+        for key in key_list:
+            try:
+                values = self.proforma.loc[key, target_column]
+                if isinstance(values, pd.Series):
+                    for value in values:
+                        if pd.notna(value):
+                            matching_values.append(str(value))
+                elif pd.notna(values):
+                    matching_values.append(str(values))
+            except KeyError:
+                # Key not found, just continue
+                continue
+            except Exception as e:
+                logging.warning(f"Error during lookup for key '{key}': {e}")
+
+        # 중복 제거 및 순서 유지
+        unique_values = list(dict.fromkeys(matching_values))
+        
+        # 지정된 위치의 값 반환
+        if 1 <= position <= len(unique_values):
+            return unique_values[position - 1]
         
         return ""
     

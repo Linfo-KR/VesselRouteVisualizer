@@ -3,8 +3,9 @@ from typing import Dict, List, Optional, Union, Any
 import logging
 from pathlib import Path
 
-from mapper import DataMapper
-from route import RouteProcessor
+from .mapper import DataMapper
+from .route import RouteProcessor
+from .normalize_schedule import ScheduleNormalizer
 
 class ExportData:
     """
@@ -12,17 +13,17 @@ class ExportData:
     """
     
     @staticmethod
-    def process_terminal_routes(reference_file: Union[str, Path],
-                              input_file: Union[str, Path],
-                              output_file: Union[str, Path],
-                              config: Dict[str, Any]) -> pd.DataFrame:
+    def process_terminal_routes(proforma: Union[str, Path],
+                                svc: Union[str, Path],
+                                output: Union[str, Path],
+                                config: Dict[str, Any]) -> pd.DataFrame:
         """
         터미널 라우트 처리를 위한 원스톱 함수
         
         Args:
-            reference_file: 기준 데이터 파일 (TerminalInfo.csv)
-            input_file: 입력 데이터 파일 (Test.csv)
-            output_file: 출력 파일 경로
+            proforma: 터미널 별 프로포마 물량 데이터 (data/proforma.csv)
+            svc: 노선 별 BPA 서비스 코드 데이터 (data/bpa_service_code.csv)
+            output: 출력 파일 경로
             config: 설정 딕셔너리
         
         Returns:
@@ -41,10 +42,10 @@ class ExportData:
         
         try:
             # 데이터 매퍼 초기화
-            mapper = DataMapper.from_csv(reference_file, key_column)
+            mapper = DataMapper.from_csv(proforma, key_column)
             
             # 입력 데이터 로드
-            input_df = pd.read_csv(input_file)
+            input_df = pd.read_csv(svc)
             
             # 라우트 프로세서로 처리
             processor = RouteProcessor(mapper)
@@ -52,9 +53,19 @@ class ExportData:
                 input_df, route_columns, field_mappings, max_terminals, output_prefix
             )
             
+            # 'Sch' 필드가 매핑 대상인 경우, 스케줄 정보 정규화
+            if 'Sch' in field_mappings:
+                normalizer = ScheduleNormalizer()
+                for i in range(1, max_terminals + 1):
+                    sch_column = f"{output_prefix}{i}Sch"
+                    if sch_column in result_df.columns:
+                        result_df[sch_column] = result_df[sch_column].apply(
+                            lambda x: normalizer.normalize(str(x)) if pd.notna(x) else ""
+                        )
+            
             # 결과 저장
-            result_df.to_csv(output_file, index=False)
-            print(f"처리 완료! 결과가 '{output_file}' 파일에 저장되었습니다.")
+            result_df.to_csv(output, index=False)
+            print(f"작업 완료. 결과가 '{output}' 파일에 저장되었습니다.")
             
             return result_df
             
