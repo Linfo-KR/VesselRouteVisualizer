@@ -9,11 +9,38 @@ sys.path.append(str(Path(__file__).parent))
 from module.mapper import DataMapper
 from module.route import RouteProcessor
 from module.export_data import ExportData
+from module.automate_ppt import PptAutomator, load_config
+
+def run_ppt_automation():
+    """PPT 자동화 프로세스를 실행합니다."""
+    print("\n--- PPT 자동 생성 시작 ---")
+    try:
+        # 1. 설정 파일 로드
+        config_path = Path(__file__).parent / 'config' / 'ppt_config.json'
+        ppt_config = load_config(config_path)
+        
+        # 2. 데이터 로드
+        csv_path = ppt_config["file_paths"]["input_csv"]
+        df = pd.read_csv(csv_path)
+        df.columns = df.columns.str.strip()
+
+        # 3. PPT 생성기 실행
+        automator = PptAutomator(ppt_config)
+        automator.generate_presentation(df)
+
+    except FileNotFoundError:
+        # load_config 또는 pd.read_csv에서 발생하는 오류
+        # 해당 함수들에서 이미 상세 오류 메시지를 출력하므로 여기서는 간단히 메시지만 남김
+        print("오류: 파일 경로를 확인하세요.")
+        return
+    except Exception as e:
+        print(f"오류: PPT 생성 중 문제가 발생했습니다 - {e}")
+        return
 
 def main():
     """Main"""
     
-    # 설정 정의
+    # 설정 정의 -> config.json 파일로 변환 필요
     config = {
         'key_column': 'SVC',
         'route_columns': ['SVC1', 'SVC2'],
@@ -28,22 +55,25 @@ def main():
     
     try:
         # 기존 코드와 동일한 처리
-        ROOT_DIR = Path(__file__).parent
-        result_df = ExportData.process_terminal_routes(
-            proforma=ROOT_DIR / 'data' / 'input' / 'proforma.csv',
-            svc=ROOT_DIR / 'data' / 'input' / 'bpa_service_code.csv', 
-            output=ROOT_DIR / 'data' / 'output' / 'result.csv',
-            config=config
-        )
+        # ROOT_DIR = Path(__file__).parent
+        # result_df = ExportData.process_terminal_routes(
+        #     proforma=ROOT_DIR / 'data' / 'input' / 'proforma.csv',
+        #     svc=ROOT_DIR / 'data' / 'input' / 'bpa_service_code.csv', 
+        #     output=ROOT_DIR / 'data' / 'output' / 'result.csv',
+        #     config=config
+        # )
         
-        print("\n=== 결과 미리보기 ===")
-        print(result_df.head(10))
+        # print("\n=== 결과 미리보기 ===")
+        # print(result_df.head(10))
         
-        # 개별 조회 예시
-        mapper = DataMapper.from_csv(ROOT_DIR /'data' / 'input' / 'proforma.csv', "SVC")
-        single_result = mapper.lookup_values("CKJ,CKJ1", "Name", 1)
-        print(f"\n단일 조회 결과: {single_result}")
-        
+        # # 개별 조회 예시
+        # mapper = DataMapper.from_csv(ROOT_DIR /'data' / 'input' / 'proforma.csv', "SVC")
+        # single_result = mapper.lookup_values("CKJ,CKJ1", "Name", 1)
+        # print(f"\n단일 조회 결과: {single_result}")
+
+        # --- PPT 자동화 실행 ---
+        run_ppt_automation()
+
     except Exception as e:
         print(f"실행 중 오류 발생: {e}")
 
