@@ -12,6 +12,7 @@
 - **유연한 라우트 매핑**: 여러 컬럼에 나뉘어 있는 서비스 노선 정보를 조합하여 관련 터미널 정보 조회
 - **운항 스케줄 정규화**: `Wed13 ~ Thu10`, `Sat/Sun`, `TBD` 등 다양한 형식의 스케줄 문자열을 `요일 HH ~ 요일 HH` 형태의 표준 형식으로 자동 변환
 - **PPT 자동 생성**: 최종 데이터를 기반으로, 사전 정의된 레이아웃에 따라 각 항로별 정보를 담은 PPT 슬라이드를 자동으로 생성
+- **항만 좌표 크롤링**: `shipxplorer.com`에서 전 세계 항만의 위도, 경도 좌표를 자동으로 수집
 - **설정 기반 동작**: `config` 파일 및 `main.py` 설정을 통해 키 컬럼, 필드명, PPT 스타일 등을 쉽게 변경 가능
 - **모듈화된 구조**: 데이터 처리 및 PPT 생성을 기능별 모듈로 분리하여 유지보수 및 확장이 용이
 
@@ -27,6 +28,7 @@ PortInfoMapper/
 │   └── test/                # 테스트용 데이터 및 템플릿
 ├── module/
 │   ├── automate_ppt.py      # [PPT 생성] PPT 자동화 클래스
+│   ├── coordinate_crawler.py  # [유틸리티] 항만 좌표 정보 크롤링
 │   ├── export_data.py       # [오케스트레이터] 데이터 처리 흐름 제어
 │   ├── route.py             # [핵심 로직] 라우트 정보를 가공하고 매핑
 │   ├── mapper.py            # [데이터 조회 엔진] 기준 정보 조회 기능
@@ -63,13 +65,23 @@ pip install -r requirements.txt
 
 ### 실행 (Usage)
 
-프로젝트 루트 디렉토리에서 `main.py` 파일을 직접 실행합니다.
+#### 전체 파이프라인 실행
+
+프로젝트 루트 디렉토리에서 `main.py` 파일을 직접 실행하여 전체 데이터 처리 및 PPT 생성 파이프라인을 실행합니다.
 
 ```bash
 python main.py
 ```
 
 실행이 완료되면 `data/output/result.csv` 파일과 `BPA_정기노선도_자동화_v3.pptx` 파일에서 최종 결과를 확인할 수 있습니다.
+
+#### 항만 좌표 수집
+
+`module/coordinate_crawler.py` 파일을 직접 실행하여 항만 좌표 정보를 크롤링하고 `data/coordinate/port_coordinates.csv` 파일로 저장할 수 있습니다.
+
+```bash
+python module/coordinate_crawler.py
+```
 
 ## 🔧 설정 (Configuration)
 
