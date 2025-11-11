@@ -3,6 +3,7 @@ import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 import json
+import threading  # 추가된 부분
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -12,7 +13,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from tqdm import tqdm
 import os
-from typing import Union
+from typing import Union, List
 
 class CoordinateCrawler:
     """
@@ -32,35 +33,44 @@ class CoordinateCrawler:
         """
         self.headless = headless
         self.max_workers = max_workers
+        # 각 스레드가 독립적인 드라이버를 저장할 공간 (핵심 변경)
+        self.thread_local = threading.local()
+        self.drivers: List[webdriver.Chrome] = [] # 생성된 드라이버를 추적하기 위한 리스트
 
-    @staticmethod
-    def _setup_driver(headless: bool) -> webdriver.Chrome:
+    def _get_driver(self) -> webdriver.Chrome:
         """
-        최적화된 옵션으로 Selenium WebDriver를 설정하고 반환합니다.
-        :param headless: 헤드리스 모드 사용 여부
-        :return: 설정된 Chrome WebDriver 객체
+        현재 스레드에 할당된 드라이버를 반환합니다. 없으면 새로 생성합니다.
         """
-        options = webdriver.ChromeOptions()
-        if headless:
-            options.add_argument("--headless")
-        
-        # 간단한 최적화: 이미지 로딩 비활성화
-        options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
-        
-        options.add_argument("--disable-gpu")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-        
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
-        return driver
+        # 현재 스레드에 드라이버가 없으면 새로 생성
+        if not hasattr(self.thread_local, 'driver'):
+            options = webdriver.ChromeOptions()
+            if self.headless:
+                options.add_argument("--headless")
+            
+            # 성능 최적화: 이미지 및 CSS 로딩 비활성화
+            prefs = {
+                "profile.managed_default_content_settings.images": 2,
+                "profile.managed_default_content_settings.stylesheets": 2,
+            }
+            options.add_experimental_option("prefs", prefs)
+            
+            options.add_argument("--disable-gpu")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+            
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=options)
+            self.thread_local.driver = driver
+            self.drivers.append(driver) # 추적 리스트에 추가
+        return self.thread_local.driver
 
     def get_port_list(self) -> list[dict]:
         """
         1단계: 전체 항만 목록 페이지에서 국가, 항만명, 항만 코드를 크롤링합니다.
         """
-        driver = self._setup_driver(self.headless)
+        # 이 메서드는 단일 스레드로 실행되므로 기존 로직 유지
+        driver = self._get_driver() 
         port_list = []
         print("Starting to collect the main port list...")
         
@@ -72,12 +82,10 @@ class CoordinateCrawler:
             country_sections = driver.find_elements(By.CSS_SELECTOR, "ul.list.port-list > li:not([id])")
             
             for section in country_sections:
-                # Find the country name from the collapsible header
                 country_div = section.find_element(By.CSS_SELECTOR, "div.collapsible.hidden")
                 country_name_raw = country_div.get_attribute("id")
                 country_name = country_name_raw.replace('-collapse', '').replace('_', ' ').title()
 
-                # Find all port links within that country section
                 port_links = country_div.find_elements(By.CSS_SELECTOR, "div.ports > a")
                 
                 for link in port_links:
@@ -85,13 +93,8 @@ class CoordinateCrawler:
                     if not href or '/data/ports/' not in href:
                         continue
                     
-                    # Extract port_code from href
                     port_code = href.split('/')[-1]
-                    
-                    # Use JavaScript to get the full text content, which can be more reliable
                     full_text = driver.execute_script("return arguments[0].textContent;", link).strip()
-                    
-                    # Extract clean port_name from the link's text
                     port_name = full_text.replace(port_code, '').strip()
                     
                     port_list.append({
@@ -101,32 +104,25 @@ class CoordinateCrawler:
                     })
         except (TimeoutException, NoSuchElementException) as e:
             print(f"An error occurred while getting the port list: {e}")
-        finally:
-            driver.quit()
+        # finally 블록에서 driver.quit() 제거
             
         print(f"Collected basic info for {len(port_list)} ports. Now starting to fetch coordinates.")
+        
         return port_list
 
-    @staticmethod
-    def _fetch_coordinates_worker(port_info: dict, headless: bool) -> Union[dict, None]:
+    def _fetch_coordinates_worker(self, port_info: dict) -> Union[dict, None]:
         """
-        (일꾼 함수) 단일 항만 코드에 대한 좌표를 크롤링합니다.
-        두 가지 전략을 순차적으로 시도하여 데이터 추출 성공률을 높입니다.
-        1. 페이지 소스에서 window.init() JSON 객체를 파싱 (빠르고 효율적).
-        2. 1번 실패 시, Selenium으로 DOM 요소를 직접 스크레이핑 (느리지만 다른 구조에 대응).
-        
-        :param port_info: 개별 항만 정보 딕셔너리
-        :param headless: 헤드리스 모드 사용 여부
-        :return: 위도, 경도 정보가 추가된 딕셔너리 또는 실패 시 None
+        (일꾼 함수) 단일 항만 코드에 대한 좌표를 크롤링합니다. (드라이버 재사용)
         """
-        driver = CoordinateCrawler._setup_driver(headless)
+        # 스레드에 할당된 드라이버를 가져옴 (매번 생성하지 않음)
+        driver = self._get_driver()
         port_code = port_info['port_code']
-        port_url = f"{CoordinateCrawler.BASE_URL}/{port_code}"
+        port_url = f"{self.BASE_URL}/{port_code}"
         
         try:
             driver.get(port_url)
             
-            # --- Strategy 1: Parse JSON from <script> tag ---
+            # Strategy 1: Parse JSON from <script> tag
             try:
                 page_source = driver.page_source
                 match = re.search(r'window\.init\((.*?)\);?\s*<\/script>', page_source, re.DOTALL)
@@ -134,26 +130,20 @@ class CoordinateCrawler:
                     json_str = match.group(1)
                     data = json.loads(json_str)
                     if 'port' in data and 'lat' in data['port'] and 'lng' in data['port']:
-                        lat = data['port']['lat']
-                        lng = data['port']['lng']
-                        port_info.update({'lat': lat, 'lng': lng})
-                        # print(f"[{port_code}] Success with JSON method.") # Optional: for debugging which method worked
+                        port_info.update({'lat': data['port']['lat'], 'lng': data['port']['lng']})
                         return port_info
             except Exception:
-                # If JSON parsing fails for any reason, silently proceed to the next strategy.
                 pass
 
-            # --- Strategy 2: Scrape DOM elements (Fallback) ---
-            # This strategy is for pages with the other HTML structure.
+            # Strategy 2: Scrape DOM elements (Fallback)
             try:
-                wait = WebDriverWait(driver, 10)
+                wait = WebDriverWait(driver, 5) # 타임아웃 감소
                 info_list_ul = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "ul.ListNew__ListStyle-sc-1kdnh14-1")))
                 info_items = info_list_ul.find_elements(By.CSS_SELECTOR, "li.ListItem__ListItemStyle-sc-k0s881-0")
                 
                 if info_items:
                     first_list_item = info_items[0]
-                    # Wait for content to load within the list item
-                    WebDriverWait(first_list_item, 5).until(EC.presence_of_element_located((By.ID, "title")))
+                    WebDriverWait(first_list_item, 3).until(EC.presence_of_element_located((By.ID, "title")))
                     
                     titles = first_list_item.find_elements(By.ID, "title")
                     values = first_list_item.find_elements(By.ID, "value")
@@ -168,65 +158,75 @@ class CoordinateCrawler:
                     
                     if lat and lng:
                         port_info.update({'lat': lat, 'lng': lng})
-                        # print(f"[{port_code}] Success with DOM method.") # Optional: for debugging
                         return port_info
             except Exception:
-                # If DOM scraping also fails, we'll proceed to the final return None.
                 pass
 
-            # If both strategies fail, silently return None.
             return None
 
         except Exception as e:
-            print(f"[{port_code}] A critical error occurred: {e}")
+            # print(f"[{port_code}] A critical error occurred: {e}") # 디버깅 시 주석 해제
             return None
-        finally:
-            driver.quit()
+        # finally 블록에서 driver.quit() 제거 (매우 중요)
+
+    def _close_drivers(self):
+        """생성된 모든 웹 드라이버를 종료합니다."""
+        print("Closing all web drivers...")
+        for driver in self.drivers:
+            try:
+                driver.quit()
+            except Exception:
+                pass # 이미 닫혔거나 오류가 발생해도 무시
 
     def run(self) -> pd.DataFrame:
         """
         전체 크롤링 파이프라인을 병렬로 실행합니다.
-        :return: 국가, 항만명, 항만코드, 위도, 경도 정보가 포함된 pandas DataFrame
         """
-        ports = self.get_port_list()
-        if not ports:
-            return pd.DataFrame()
-
         all_port_data = []
-        
-        # ThreadPoolExecutor를 사용하여 병렬로 좌표 수집
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # 각 항만 정보에 대한 작업을 제출
-            futures = [executor.submit(self._fetch_coordinates_worker, port, self.headless) for port in ports]
-            
-            # tqdm을 사용하여 진행 상황을 시각적으로 표시
-            for future in tqdm(as_completed(futures), total=len(ports), desc="Fetching Coordinates"):
-                result = future.result()
-                if result:
-                    all_port_data.append(result)
+        try:
+            ports = self.get_port_list()
+            if not ports:
+                return pd.DataFrame()
+
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                futures = [executor.submit(self._fetch_coordinates_worker, port) for port in ports]
+                
+                for future in tqdm(as_completed(futures), total=len(ports), desc="Fetching Coordinates"):
+                    result = future.result()
+                    if result:
+                        all_port_data.append(result)
+        finally:
+            # 모든 작업이 끝나면 생성된 모든 드라이버를 정리
+            self._close_drivers()
                     
         return pd.DataFrame(all_port_data)
 
 
 if __name__ == '__main__':
     try:
-        # 최적화를 위해 headless=True로 설정, 동시 작업 스레드 수(max_workers)는 10으로 설정
-        # PC 사양과 네트워크 환경에 따라 max_workers 수를 조절하여 성능을 최적화할 수 있습니다. (예: 5 ~ 20)
+        # PC 사양과 네트워크 환경에 따라 max_workers 수를 조절하여 성능을 최적화할 수 있습니다.
+        # 서버 차단을 피하기 위해 10 내외의 낮은 값으로 시작하는 것을 권장합니다.
         crawler = CoordinateCrawler(headless=True, max_workers=10)
         
         port_data_df = crawler.run()
         
         if not port_data_df.empty:
-            # CSV 파일 저장을 위한 디렉토리 생성
-            output_dir = "./data/coordinate"
-            os.makedirs(output_dir, exist_ok=True)
+            # --- 경로 문제 해결을 위한 절대 경로 설정 ---
+            # 이 스크립트 파일(coordinate_crawler.py)의 절대 경로를 기준으로 경로를 설정합니다.
+            SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+            # 이 스크립트의 상위 폴더가 프로젝트 루트 폴더입니다.
+            PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
             
-            output_path = os.path.join(output_dir, "port_coordinates.csv")
+            # 절대 경로를 사용하여 정확한 출력 경로를 지정합니다.
+            output_path = os.path.join(PROJECT_ROOT, "data", "coordinate", "port_coordinates.csv")
+            
+            # 출력 디렉토리가 존재하는지 확인하고 없으면 생성합니다.
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
             
             port_data_df.to_csv(output_path, index=False, encoding='utf-8-sig')
             print(f"\nCrawling complete! Saved {len(port_data_df)} port coordinates to '{output_path}'.")
         else:
-            print("\nNo data was collected.")
+            print("\nNo data was collected. This might be due to server-side blocking (rate-limiting).")
 
     except Exception as e:
         print(f"An unexpected error occurred during the crawling process: {e}")
