@@ -99,15 +99,18 @@ class Rotation(Base):
 
 ### Phase 1: 기반 구축 및 백엔드 설정
 
-1.  **프로젝트 구조 개편:**
+1.  **프로젝트 구조 개편 (완료):**
     - 루트에 `backend`, `frontend`, `scripts` 디렉토리 생성.
     - `docker-compose.yml` 파일을 루트에 생성하여 `backend`, `postgres`, `nginx` 서비스 정의.
-2.  **데이터베이스 및 ETL:**
-    - `backend/app/` 내에 `database.py`, `models.py`, `schemas.py` 작성.
-    - `scripts/etl.py` 스크립트를 개발하여 CSV 데이터를 DB에 적재.
-    - Docker Compose를 통해 PostgreSQL 컨테이너 실행 및 데이터 적재 확인.
+2.  **데이터베이스 및 ETL (진행 중):**
+    - `backend/app/` 내에 `database.py`, `models.py`, `schemas.py` 작성 (완료).
+    - `scripts/etl.py` 스크립트를 개발하여 CSV 데이터를 DB에 적재 (초안 작성 완료).
+    - **[TODO] DB 모델 수정:** 실제 CSV 데이터 구조에 맞춰 스키마 업데이트 필요.
+    - **[TODO] CSV 데이터 정제:** DB 스키마와 일치하도록 CSV 파일 내 컬럼명 및 데이터 형식 수동 보정.
+    - **[TODO] ETL 테스트 및 수정:** 정제된 데이터로 ETL 스크립트 실행 -> 오류 수정 -> 데이터 적재 성공 확인.
 3.  **기본 API 구현:**
-    - `backend/app/main.py`에 `/api/services`와 `/api/services/{service_id}` 엔드포인트 구현.
+    - `backend/app/main.py`에 `/api/services`와 `/api/services/{service_id}` 엔드포인트 구현 (완료).
+    - **[TODO] API 테스트:** ETL 완료 후 데이터가 정상적으로 조회되는지 확인.
     - FastAPI의 `CORSMiddleware`를 추가하여 Frontendからのリクエストを許可します。
     - `uvicorn`으로 서버를 실행하고, 브라우저나 `curl`을 통해 API 응답(JSON) 확인.
 
