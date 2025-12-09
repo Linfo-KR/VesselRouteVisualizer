@@ -111,7 +111,7 @@ class Rotation(Base):
 3.  **기본 API 구현:**
     - `backend/app/main.py`에 `/api/services`와 `/api/services/{service_id}` 엔드포인트 구현 (완료).
     - **[TODO] API 테스트:** ETL 완료 후 데이터가 정상적으로 조회되는지 확인.
-    - FastAPI의 `CORSMiddleware`를 추가하여 Frontendからのリクエストを許可します。
+    - FastAPI의 `CORSMiddleware`를 추가하여 Frontend로부터의 요청을 허용합니다.
     - `uvicorn`으로 서버를 실행하고, 브라우저나 `curl`을 통해 API 응답(JSON) 확인.
 
 ### Phase 2: 프론트엔드 시각화
