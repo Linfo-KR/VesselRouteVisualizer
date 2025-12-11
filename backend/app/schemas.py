@@ -1,51 +1,66 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
+from datetime import datetime
 
-# Port Schemas
+# --- Port Schemas ---
 class PortBase(BaseModel):
-    name: str
-    code: Optional[str] = None
+    port_name: str
     lat: float
-    lon: float
+    lng: float
+    nation_name: Optional[str] = None
+    aliases: Optional[List[str]] = None
+    port_info: Optional[Any] = None
 
 class PortCreate(PortBase):
-    pass
+    port_code: str
 
 class Port(PortBase):
-    id: int
+    port_code: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
-# Rotation Schemas
-class RotationBase(BaseModel):
-    port_order: int
-    direction: Optional[str] = None
-    day: Optional[int] = None
-    terminal: Optional[str] = None
-    port_id: int
+# --- Proforma Schemas ---
+class ProformaBase(BaseModel):
+    seq: int
+    terminal_name: str
+    wtp: Optional[str] = None
+    sch: Optional[str] = None
+    svc: Optional[str] = None # 단순 정보성 필드
 
-class RotationCreate(RotationBase):
-    pass
+class ProformaCreate(ProformaBase):
+    route_idx: int
 
-class Rotation(RotationBase):
-    id: int
-    port: Port # Nested Port information
-
+class Proforma(ProformaBase):
+    term_id: int
+    route_idx: int
+    
     class Config:
         from_attributes = True
 
-# Service Schemas
-class ServiceBase(BaseModel):
-    name: str
-    description: Optional[str] = None
+# --- Route Schemas ---
+class RouteBase(BaseModel):
+    svc: Optional[str] = None
+    route_name: Optional[str] = None
+    region_idx: int = 0
+    region: Optional[str] = None
+    sort_idx: int = 0
+    carriers: Optional[str] = None
+    port_rotation: Optional[str] = None
+    frequency: Optional[str] = None
+    duration: Optional[int] = None
+    ships: Optional[str] = None
 
-class ServiceCreate(ServiceBase):
+class RouteCreate(RouteBase):
     pass
 
-class Service(ServiceBase):
-    id: int
-    rotations: List[Rotation] = []
+class Route(RouteBase):
+    route_idx: int
+    updated_at: Optional[datetime] = None
+    # Relationship 이름과 타입 수정 (rotations -> proforma)
+    proforma: List[Proforma] = []
 
     class Config:
         from_attributes = True
