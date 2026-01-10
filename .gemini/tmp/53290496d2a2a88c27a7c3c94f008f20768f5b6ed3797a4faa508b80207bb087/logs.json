@@ -1,0 +1,16 @@
+[
+  {
+    "sessionId": "9185ef77-f195-4664-95fe-51e679a6bc7c",
+    "messageId": 0,
+    "type": "user",
+    "message": "@module/ 여기에 normalize_schedule.py 파일을 하나 생성해줘. 그리고 해당 파일에 VBA로 작성된 @module/SourceCode_NormalizeSchedule.txt 파일을 분석해서 동일한 기능을 하는 클래스를 만들어줘. 코딩 후에 코드의 상세한 부분을 설명해줘.",
+    "timestamp": "2025-09-25T10:59:08.146Z"
+  },
+  {
+    "sessionId": "9185ef77-f195-4664-95fe-51e679a6bc7c",
+    "messageId": 1,
+    "type": "user",
+    "message": "setting.json 파일은 어떻게 업데이트 하는것이고 현재의 루트 디렉터리에는 파일이 존재하지 않는데 어떻게 해야하는지 말해줘. 또한 GEMINI.md 파일은 어떻게 사용해야 하는지 설명해줘.",
+    "timestamp": "2025-09-25T11:01:42.918Z"
+  }
+]

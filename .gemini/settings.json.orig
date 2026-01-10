@@ -1,0 +1,9 @@
+{
+  "general": {
+    "checkpointing.enabled": true,
+    "checkpointing.path": "~/.gemini/checkpoints"
+  },
+  "maxSessionTurns": 20,
+  "selectedAuthType": "oauth-personal",
+  "theme": "GitHub"
+}

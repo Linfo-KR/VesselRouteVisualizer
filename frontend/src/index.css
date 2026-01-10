@@ -1,68 +1,123 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* --- Map Zoom Responsive Styles --- */
+
+/* Zoom Low (World View): Tiny dots, No labels */
+.leaflet-container.zoom-low .port-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-width: 1px !important;
 }
-a:hover {
-  color: #535bf2;
+.leaflet-container.zoom-low .port-label {
+  display: none; /* Hide labels when zoomed out */
+}
+.leaflet-container.zoom-low .seq-badge {
+  display: none;
+}
+/* Exception: Always show Busan and Start/End labels even in low zoom, but smaller */
+.leaflet-container.zoom-low .port-highlight .port-label,
+.leaflet-container.zoom-low .port-start-end .port-label {
+  display: block;
+  font-size: 10px;
 }
 
-body {
-  margin: 0;
+/* Zoom Mid (Regional View): Normal dots, Labels visible */
+.leaflet-container.zoom-mid .port-dot {
+  width: 10px;
+  height: 10px;
+}
+.leaflet-container.zoom-mid .port-label {
+  font-size: 11px;
+}
+
+/* Zoom High (Port View): Large dots, Clear labels */
+.leaflet-container.zoom-high .port-dot {
+  width: 14px;
+  height: 14px;
+}
+.leaflet-container.zoom-high .port-label {
+  font-size: 14px;
+}
+
+/* --- Marker Base Styles --- */
+.port-marker {
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Ensure marker doesn't block mouse events for line underneath */
+  pointer-events: none; 
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.port-dot {
+  width: 10px;
+  height: 10px;
+  background-color: black;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  transition: all 0.2s ease;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.port-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+  margin-top: 4px;
+  white-space: nowrap;
+  pointer-events: auto; /* Allow text selection/clicking */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Highlighted Port (Busan) */
+.port-highlight .port-dot {
+  background-color: #00cc66;
+  width: 14px;
+  height: 14px;
+  border: 2px solid white;
+  z-index: 100;
+}
+.port-highlight .port-label {
+  color: #00994d;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+/* Start/End Port */
+.port-start-end .port-dot {
+  background-color: #ff6600;
+  border: 2px solid white;
+}
+.port-start-end .port-label {
+  color: #cc5200;
+}
+
+/* Sequence Badge */
+.seq-badge {
+  background-color: #003399;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  border: 1px solid white;
+  z-index: 10;
 }

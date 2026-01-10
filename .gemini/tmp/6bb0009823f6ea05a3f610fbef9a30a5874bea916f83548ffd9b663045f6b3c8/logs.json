@@ -1,0 +1,72 @@
+[
+  {
+    "sessionId": "05d286a5-a28b-41d1-bbda-b00f23b8628f",
+    "messageId": 0,
+    "type": "user",
+    "message": "/help",
+    "timestamp": "2025-09-10T04:01:40.688Z"
+  },
+  {
+    "sessionId": "05d286a5-a28b-41d1-bbda-b00f23b8628f",
+    "messageId": 1,
+    "type": "user",
+    "message": "/auth",
+    "timestamp": "2025-09-10T04:01:48.376Z"
+  },
+  {
+    "sessionId": "05d286a5-a28b-41d1-bbda-b00f23b8628f",
+    "messageId": 2,
+    "type": "user",
+    "message": "theme",
+    "timestamp": "2025-09-10T04:03:12.499Z"
+  },
+  {
+    "sessionId": "05d286a5-a28b-41d1-bbda-b00f23b8628f",
+    "messageId": 3,
+    "type": "user",
+    "message": "/theme",
+    "timestamp": "2025-09-10T04:03:24.947Z"
+  },
+  {
+    "sessionId": "4264b06b-fde5-4f8c-928b-f8bcf568e19a",
+    "messageId": 0,
+    "type": "user",
+    "message": "cd C:\\Users\\my\\Desktop\\BPA\\PortInfoMapper\\module",
+    "timestamp": "2025-09-10T04:07:52.468Z"
+  },
+  {
+    "sessionId": "4264b06b-fde5-4f8c-928b-f8bcf568e19a",
+    "messageId": 1,
+    "type": "user",
+    "message": "이제 부터 모든 설명은 한국어로 해줘.",
+    "timestamp": "2025-09-10T04:08:47.833Z"
+  },
+  {
+    "sessionId": "4264b06b-fde5-4f8c-928b-f8bcf568e19a",
+    "messageId": 2,
+    "type": "user",
+    "message": "genimi --help",
+    "timestamp": "2025-09-10T04:10:43.389Z"
+  },
+  {
+    "sessionId": "4264b06b-fde5-4f8c-928b-f8bcf568e19a",
+    "messageId": 3,
+    "type": "user",
+    "message": "/help",
+    "timestamp": "2025-09-10T04:11:41.402Z"
+  },
+  {
+    "sessionId": "839cae69-031d-4cb7-87c5-e5ba8dbd6a28",
+    "messageId": 0,
+    "type": "user",
+    "message": "/help",
+    "timestamp": "2025-09-10T04:20:45.424Z"
+  },
+  {
+    "sessionId": "839cae69-031d-4cb7-87c5-e5ba8dbd6a28",
+    "messageId": 1,
+    "type": "user",
+    "message": "/quit",
+    "timestamp": "2025-09-10T04:21:08.898Z"
+  }
+]

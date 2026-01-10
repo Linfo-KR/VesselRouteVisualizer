@@ -59,8 +59,13 @@ class RouteCreate(RouteBase):
 class Route(RouteBase):
     route_idx: int
     updated_at: Optional[datetime] = None
-    # Relationship 이름과 타입 수정 (rotations -> proforma)
     proforma: List[Proforma] = []
+    line_geometry: Optional[List[List[float]]] = None # Add line geometry field
 
     class Config:
         from_attributes = True
+
+class PortMismatchFix(BaseModel):
+    route_idx: int
+    bad_port_name: str
+    correct_port_code: str

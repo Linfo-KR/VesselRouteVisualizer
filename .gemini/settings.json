@@ -1,0 +1,17 @@
+{
+  "model": {
+    "maxSessionTurns": 500
+  },
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  },
+  "ui": {
+    "theme": "GitHub"
+  },
+  "general": {
+    "checkpointing.enabled": true,
+    "checkpointing.path": "~/.gemini/checkpoints"
+  }
+}

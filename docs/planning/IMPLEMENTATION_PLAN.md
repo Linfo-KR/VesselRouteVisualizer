@@ -39,61 +39,56 @@ API 호출 시마다 CSV를 읽는 방식은 비효율적이므로, 정형화된
 - **ETL 스크립트 (`scripts/etl.py`):**
   - **Extract:** `data/input` 디렉토리의 `proforma.csv`, `bpa_service_code.csv` 등 원본 CSV 파일을 Pandas로 읽어들입니다.
   - **Transform:** 기존 `module`의 로직을 재사용하여 데이터를 정제하고, `port_coordinates.csv`를 참조하여 항구 좌표를 결합합니다. 데이터 누락, 형식 오류 등을 처리합니다.
-  - **Load:** SQLAlchemy를 사용하여 정제된 데이터를 PostgreSQL 데이터베이스의 `ports`, `services`, `rotations` 테이블에 삽입(Insert) 또는 업데이트(Update)합니다.
+  - **Load:** SQLAlchemy를 사용하여 정제된 데이터를 SQLite 데이터베이스의 `Port`, `Route`, `Proforma` 테이블에 삽입(Insert) 또는 업데이트(Update)합니다.
 - 이 스크립트는 초기 데이터 구축 및 주기적인 데이터 업데이트에 사용됩니다.
 
 ### 3.2. 데이터베이스 스키마 (`backend/app/models.py`)
 
-SQLAlchemy를 사용하여 다음과 같이 테이블 모델을 정의합니다.
+SQLAlchemy를 사용하여 다음과 같이 테이블 모델을 정의합니다. 현재는 초기 개발 단계의 유연성을 위해 `port_rotation`과 같은 필드를 문자열로 저장하는 비정규화된 스키마를 사용합니다.
 
 ```python
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
-from sqlalchemy.orm import relationship
-from .database import Base
+from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 class Port(Base):
     __tablename__ = "ports"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True, nullable=False)
-    code = Column(String, unique=True, nullable=False)
-    lat = Column(Float, nullable=False)
-    lon = Column(Float, nullable=False)
+    port_name = Column(String, unique=True, index=True, nullable=False)
+    port_code = Column(String, unique=True, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
 
-class Service(Base):
-    __tablename__ = "services"
+class Route(Base):
+    __tablename__ = "routes"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True, nullable=False)
-    code = Column(String, unique=True)
-    rotations = relationship("Rotation", back_populates="service")
+    service_code = Column(String, nullable=False)
+    consortium = Column(String)
+    port_rotation = Column(String, nullable=False) # 예: "BUS-SHA-SIN-HKG"
+    direction = Column(String) # 예: "Eastbound", "Westbound"
 
-class Rotation(Base):
-    __tablename__ = "rotations"
+class Proforma(Base):
+    __tablename__ = "proformas"
     id = Column(Integer, primary_key=True, index=True)
-    port_order = Column(Integer, nullable=False)
+    service_code = Column(String, nullable=False)
     direction = Column(String)
+    port_code = Column(String, nullable=False)
+    port_name = Column(String, nullable=False)
     day = Column(Integer)
+    etb = Column(String) # Estimated Time of Berth
+    etd = Column(String) # Estimated Time of Departure
     terminal = Column(String)
-    port_id = Column(Integer, ForeignKey("ports.id"))
-    service_id = Column(Integer, ForeignKey("services.id"))
-    
-    port = relationship("Port")
-    service = relationship("Service", back_populates="rotations")
 ```
 
 ## 4. API 설계 (CRUD)
 
-데이터 관리를 위해 다음과 같이 명확한 RESTful API 엔드포인트를 설계합니다. 초기에는 `GET` 요청을 중심으로 구현하고, 관리자 기능을 위해 `POST`, `PUT`, `DELETE`를 확장합니다.
+데이터 관리를 위해 다음과 같이 명확한 RESTful API 엔드포인트를 설계합니다. 현재 백엔드는 `Route` 및 `Port` 정보 조회에 중점을 둡니다.
 
 | Method | Endpoint | 설명 |
 | :--- | :--- | :--- |
-| `GET` | `/api/services` | 모든 서비스(항로) 목록을 반환합니다. |
-| `GET` | `/api/services/{service_id}` | 특정 서비스의 상세 정보와 전체 기항지(`rotations`) 정보를 반환합니다. |
-| `POST` | `/api/services` | **(Admin)** 새로운 서비스를 생성합니다. |
-| `PUT` | `/api/services/{service_id}` | **(Admin)** 기존 서비스 정보를 수정합니다. |
-| `DELETE`| `/api/services/{service_id}` | **(Admin)** 서비스를 삭제합니다. |
+| `GET` | `/api/routes` | 모든 노선 정보를 반환합니다. |
 | `GET` | `/api/ports` | 모든 항구 목록을 반환합니다. |
-| `POST` | `/api/ports` | **(Admin)** 새로운 항구를 생성합니다. |
-| `PUT` | `/api/ports/{port_id}` | **(Admin)** 기존 항구 정보를 수정합니다. |
 
 ## 5. 상세 실행 계획 (Phased Implementation)
 
@@ -102,15 +97,11 @@ class Rotation(Base):
 1.  **프로젝트 구조 개편 (완료):**
     - 루트에 `backend`, `frontend`, `scripts` 디렉토리 생성.
     - `docker-compose.yml` 파일을 루트에 생성하여 `backend`, `postgres`, `nginx` 서비스 정의.
-2.  **데이터베이스 및 ETL (진행 중):**
+2.  **데이터베이스 및 ETL (완료):**
     - `backend/app/` 내에 `database.py`, `models.py`, `schemas.py` 작성 (완료).
-    - `scripts/etl.py` 스크립트를 개발하여 CSV 데이터를 DB에 적재 (초안 작성 완료).
-    - **[TODO] DB 모델 수정:** 실제 CSV 데이터 구조에 맞춰 스키마 업데이트 필요.
-    - **[TODO] CSV 데이터 정제:** DB 스키마와 일치하도록 CSV 파일 내 컬럼명 및 데이터 형식 수동 보정.
-    - **[TODO] ETL 테스트 및 수정:** 정제된 데이터로 ETL 스크립트 실행 -> 오류 수정 -> 데이터 적재 성공 확인.
-3.  **기본 API 구현:**
-    - `backend/app/main.py`에 `/api/services`와 `/api/services/{service_id}` 엔드포인트 구현 (완료).
-    - **[TODO] API 테스트:** ETL 완료 후 데이터가 정상적으로 조회되는지 확인.
+    - `scripts/etl.py` 스크립트를 개발하여 CSV 데이터를 DB에 적재 (완료).
+3.  **기본 API 구현 (완료):**
+    - `backend/app/main.py`에 `/api/routes`와 `/api/ports` 엔드포인트를 구현 (완료).
     - FastAPI의 `CORSMiddleware`를 추가하여 Frontend로부터의 요청을 허용합니다.
     - `uvicorn`으로 서버를 실행하고, 브라우저나 `curl`을 통해 API 응답(JSON) 확인.
 

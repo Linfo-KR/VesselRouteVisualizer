@@ -1,0 +1,37 @@
+[
+  {
+    "sessionId": "47cd3f3b-4d51-4410-94ab-3a9ca5385fa6",
+    "messageId": 0,
+    "type": "user",
+    "message": "/help",
+    "timestamp": "2025-09-10T04:25:40.145Z"
+  },
+  {
+    "sessionId": "47cd3f3b-4d51-4410-94ab-3a9ca5385fa6",
+    "messageId": 1,
+    "type": "user",
+    "message": "/settings",
+    "timestamp": "2025-09-10T04:25:58.257Z"
+  },
+  {
+    "sessionId": "47cd3f3b-4d51-4410-94ab-3a9ca5385fa6",
+    "messageId": 2,
+    "type": "user",
+    "message": "/docs",
+    "timestamp": "2025-09-10T04:32:30.102Z"
+  },
+  {
+    "sessionId": "47cd3f3b-4d51-4410-94ab-3a9ca5385fa6",
+    "messageId": 3,
+    "type": "user",
+    "message": "GEMINI.md 파일의 초기 세팅이 어떻게 되어있고, 해당 세팅을 변경하려면 어떻게 해야하는지 알려",
+    "timestamp": "2025-09-10T12:50:33.905Z"
+  },
+  {
+    "sessionId": "47cd3f3b-4d51-4410-94ab-3a9ca5385fa6",
+    "messageId": 4,
+    "type": "user",
+    "message": "지금 현재 루트 디렉터리에 GEMINI.md와 settings.json을 생성하고 보편적으로 사용되는 세팅값을 입력하고 생성해.",
+    "timestamp": "2025-09-10T12:51:46.759Z"
+  }
+]
