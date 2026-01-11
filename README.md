@@ -1,6 +1,6 @@
-# SeaRoute: 해상 노선 시각화 플랫폼
+# VesselRouteVisualizer: 해상 노선 시각화 플랫폼
 
-**SeaRoute**는 기존 `PortInfoMapper` 프로젝트를 확장하여, 전 세계 해상 운송 노선(Service Route)과 항구(Port), 그리고 상세 기항지 정보(Proforma Schedule)를 웹 상에서 시각적으로 탐색하고 관리할 수 있는 모던 웹 애플리케이션입니다.
+**VesselRouteVisualizer**는 기존 `PortInfoMapper` 프로젝트를 확장하여, 전 세계 해상 운송 노선(Service Route)과 항구(Port), 그리고 상세 기항지 정보(Proforma Schedule)를 웹 상에서 시각적으로 탐색하고 관리할 수 있는 모던 웹 애플리케이션입니다.
 
 기존의 CSV 데이터 처리 및 PPT 자동 생성 기능에 더해, **PostgreSQL(SQLite) 데이터베이스**, **FastAPI 백엔드**, 그리고 **React 프론트엔드(예정)** 기반의 대화형 플랫폼으로 진화했습니다.
 
@@ -122,8 +122,9 @@ uvicorn backend.app.main:app --reload --port 8000
 - [x] DB 스키마 설계 및 구축
 - [x] CSV 데이터 ETL 파이프라인 구현
 - [x] FastAPI 기반 RESTful API 구현
-- [ ] **React 기반 Frontend 개발**
-    - [ ] Leaflet.js 지도 연동
-    - [ ] 노선 검색 및 선택 UI
-    - [ ] 노선 시각화 (Polyline, Marker)
+- [x] **React 기반 Frontend 개발**
+    - [x] Leaflet.js 지도 연동
+    - [x] 노선 검색 및 선택 UI
+    - [x] 노선 시각화 (Polyline, Marker)
+    - [ ] 노선 시각화 최적화([https://](https://github.com/genthalili/searoute-py) 참고, 실제 항로와 유사하게...)
 - [ ] 배포 (Docker, AWS)
