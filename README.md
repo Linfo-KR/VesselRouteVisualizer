@@ -25,7 +25,7 @@
 ## 📂 프로젝트 구조 (Project Structure)
 
 ```
-PortInfoMapper/
+VesselRouteVisualizer/
 ├── backend/                 # Backend API 서버 (FastAPI)
 │   ├── app/
 │   │   ├── main.py          # API 엔드포인트 정의
@@ -126,5 +126,5 @@ uvicorn backend.app.main:app --reload --port 8000
     - [x] Leaflet.js 지도 연동
     - [x] 노선 검색 및 선택 UI
     - [x] 노선 시각화 (Polyline, Marker)
-    - [ ] 노선 시각화 최적화([https://](https://github.com/genthalili/searoute-py) 참고, 실제 항로와 유사하게...)
+    - [ ] 노선 시각화 최적화(https://github.com/genthalili/searoute-py 참고, 실제 항로와 유사하게...)
 - [ ] 배포 (Docker, AWS)
