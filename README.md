@@ -1,8 +1,8 @@
-# VesselRouteVisualizer: 해상 노선 시각화 플랫폼
+# VesselRouteVisualizer: 해상 노선 시각화 플랫폼 with GEMINI CLI
 
 **VesselRouteVisualizer**는 기존 `PortInfoMapper` 프로젝트를 확장하여, 전 세계 해상 운송 노선(Service Route)과 항구(Port), 그리고 상세 기항지 정보(Proforma Schedule)를 웹 상에서 시각적으로 탐색하고 관리할 수 있는 모던 웹 애플리케이션입니다.
 
-기존의 CSV 데이터 처리 및 PPT 자동 생성 기능에 더해, **PostgreSQL(SQLite) 데이터베이스**, **FastAPI 백엔드**, 그리고 **React 프론트엔드(예정)** 기반의 대화형 플랫폼으로 진화했습니다.
+기존의 CSV 데이터 처리 및 PPT 처리 기능에 더해, **PostgreSQL(SQLite) 데이터베이스**, **FastAPI 백엔드**, 그리고 **React 프론트엔드(예정)** 기반의 대화형 플랫폼으로 진화했습니다.
 
 ## 📖 개요 (Overview)
 
